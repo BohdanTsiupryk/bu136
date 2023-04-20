@@ -13,7 +13,7 @@ public class GitController {
 
     private final GitService gitService;
 
-    @GetMapping("/folders")
+    @GetMapping("/backup")
     public ResponseEntity<HttpStatus> backup() {
 
         gitService.backup();

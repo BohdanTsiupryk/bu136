@@ -5,10 +5,15 @@ settings:
   schedule: "0 0 12 * * *"
   ssh:
     # path to private ssh key
-    file: "/testbu135/test"
+    file: "E:\\testbu135\\test"
     passphrase: ""
 
 spring:
+  freemarker:
+    template-loader-path: classpath:/templates/
+    suffix: .ftl
+    expose-request-attributes: true
+
   datasource:
     driver-class-name: org.postgresql.Driver
     username: 'postgres'
@@ -17,17 +22,6 @@ spring:
   jpa:
     generate-ddl: false
     hibernate:
-      ddl-auto: create
+      ddl-auto: update
     database: postgresql
     show-sql: true
-
-git:
-  folders:
-    - path: "fs/testbu135"
-      pref: "test1"
-      # git remote name or path
-      remote: "origin"
-    - path: "fs/test2"
-      pref: "test2"
-      # git remote name or path
-      remote: "origin"

@@ -2,6 +2,9 @@ package bts.bu136.service;
 
 import bts.bu136.config.AppConfigData;
 import bts.bu136.config.GitData;
+import bts.bu136.model.BackupFolder;
+import bts.bu136.repository.BackupFolderRepository;
+import bts.bu136.repository.LogRecordRepository;
 import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
@@ -26,6 +29,7 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -35,50 +39,59 @@ import java.util.stream.Collectors;
 public class GitService {
 
     private final AppConfigData appConfigData;
-    private final GitData gitData;
+    private final BackupFolderRepository repository;
+    private final RecordService recordService;
+
     private final Logger logger = LoggerFactory.getLogger(GitService.class);
 
     public void backup() {
+        List<BackupFolder> folders = repository.findAll();
+
         logger.info("Start backup processing");
         logger.info(String.format("Folders list: \n %s",
-                gitData.folders().stream().map(f -> f.pref() + " - " + f.path()).collect(Collectors.toList()))
+                folders.stream().map(f -> f.getPref() + " - " + f.getPath()).collect(Collectors.toList()))
         );
 
-        gitData.folders()
+
+        folders
                 .forEach(folder -> {
 
-                        if (!checkFolder(folder.path())) {
-                            logger.error(folder.pref() + " - root or .git don't exist");
-                            return;
+                            if (!checkFolder(folder.getPath())) {
+                                logger.error(folder.getPref() + " - root or .git don't exist");
+                                recordService.addError("root or .git don't exist", folder);
+                                return;
+                            }
+
+                            try {
+                                Git git = git(folder.getPath());
+                                SshSessionFactory sshSessionFactory = createSshSessionFactory(appConfigData.ssh().file(), appConfigData.ssh().passphrase());
+
+                                TransportConfigCallback transportConfigCallback = transport -> {
+                                    if (transport instanceof SshTransport t) {
+                                        t.setSshSessionFactory(sshSessionFactory);
+                                    }
+                                };
+
+                                String message = generateCommitMessage(folder.getPref());
+
+                                git.pull()
+                                        .setTransportConfigCallback(transportConfigCallback)
+                                        .call();
+                                git.add().addFilepattern(".").call();
+                                git.commit().setMessage(message).call();
+                                git.push()
+                                        .setTransportConfigCallback(transportConfigCallback)
+                                        .setRemote(folder.getRemote())
+                                        .call();
+
+                                recordService.addInfo("Backup success, commit message: " + message, folder);
+                                logger.info(folder.getPref() + " - backup success, commit message: " + message);
+
+                            } catch (Exception e) {
+                                recordService.addError(e.getMessage(), folder);
+                                logger.error(folder.getPref() + " - " + e.getMessage());
+                            }
                         }
-
-                        try {
-                            Git git = git(folder.path());
-                            SshSessionFactory sshSessionFactory = createSshSessionFactory(appConfigData.ssh().file(), appConfigData.ssh().passphrase());
-
-                            TransportConfigCallback transportConfigCallback = transport -> {
-                                if (transport instanceof SshTransport t) {
-                                    t.setSshSessionFactory(sshSessionFactory);
-                                }
-                            };
-
-                            String message = generateCommitMessage(folder.pref());
-
-                            git.pull()
-                                    .setTransportConfigCallback(transportConfigCallback)
-                                    .call();
-                            git.add().addFilepattern(".").call();
-                            git.commit().setMessage(message).call();
-                            git.push()
-                                    .setTransportConfigCallback(transportConfigCallback)
-                                    .setRemote(folder.remote())
-                                    .call();
-
-                            logger.info(folder.pref() + " - backup success, commit message: " + message);
-                        } catch (Exception e) {
-                            logger.error(folder.pref() + " - " + e.getMessage());
-                        }
-                    }
                 );
 
         logger.info("Finish backup processing");
