@@ -16,9 +16,9 @@ spring:
 
   datasource:
     driver-class-name: org.postgresql.Driver
-    username: 'postgres'
-    password: '1'
-    url: jdbc:postgresql://localhost:5432/bu
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:1}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/bu}
   jpa:
     generate-ddl: false
     hibernate:
