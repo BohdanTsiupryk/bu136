@@ -11,7 +11,7 @@ services:
       POSTGRES_PASSWORD: "1"
 
   server:
-    build: .
+    image: bohdantsiupryk/git-backup:latest
     restart: always
     ports:
       - "8880:8880"
