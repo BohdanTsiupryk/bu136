@@ -5,8 +5,8 @@ settings:
   schedule: "0 0 12 * * *"
   ssh:
     # path to private ssh key
-    file: "E:\\testbu135\\test"
-    passphrase: ""
+    file: ${PATH_TO_SSH_FILE:test}
+    passphrase: ${SSH_PASSPHRASE:}
 
 spring:
   freemarker:

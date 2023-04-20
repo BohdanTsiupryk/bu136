@@ -113,14 +113,14 @@ public class GitService {
             protected JSch createDefaultJSch(FS fs) throws JSchException {
                 JSch jsch = super.createDefaultJSch(fs);
                 // Load SSH key
-                jsch.addIdentity(file, passphrase);
+                jsch.addIdentity("/vol/" + file, passphrase);
                 return jsch;
             }
         };
     }
 
     private boolean checkFolder(String path) {
-        File file = new File(path);
+        File file = new File("/vol/" + path);
 
         return file.isDirectory() &&
                 Arrays.stream(Objects.requireNonNull(file.list())).anyMatch(f -> f.contains(".git"));
@@ -128,7 +128,7 @@ public class GitService {
 
     private Git git(String path) throws IOException {
         Repository existingRepo = new FileRepositoryBuilder()
-                .setGitDir(new File(path + "/.git"))
+                .setGitDir(new File("/vol/" + path + "/.git"))
                 .build();
         return new Git(existingRepo);
     }
