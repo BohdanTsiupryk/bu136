@@ -3,6 +3,7 @@ server:
 settings:
   #scheduler cron expression ((0 0 12 * * *) every day at 12pm)
   schedule: "0 0 12 * * *"
+  docker-volume: ${DOCKER_VOLUME:}
   ssh:
     # path to private ssh key
     file: ${PATH_TO_SSH_FILE:test}

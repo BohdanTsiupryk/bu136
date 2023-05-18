@@ -1,22 +1,20 @@
 package bts.bu136.service;
 
 import bts.bu136.config.AppConfigData;
-import bts.bu136.config.GitData;
 import bts.bu136.model.BackupFolder;
+import bts.bu136.model.Config;
 import bts.bu136.repository.BackupFolderRepository;
-import bts.bu136.repository.LogRecordRepository;
+import bts.bu136.repository.ConfigRepository;
 import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 import lombok.RequiredArgsConstructor;
-import lombok.val;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.TransportConfigCallback;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.eclipse.jgit.transport.SshSessionFactory;
 import org.eclipse.jgit.transport.SshTransport;
-import org.eclipse.jgit.transport.Transport;
 import org.eclipse.jgit.transport.ssh.jsch.JschConfigSessionFactory;
 import org.eclipse.jgit.transport.ssh.jsch.OpenSshConfig;
 import org.eclipse.jgit.util.FS;
@@ -38,14 +36,17 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class GitService {
 
-    private final AppConfigData appConfigData;
     private final BackupFolderRepository repository;
     private final RecordService recordService;
+    private final ConfigRepository configRepository;
 
     private final Logger logger = LoggerFactory.getLogger(GitService.class);
 
     public void backup() {
         List<BackupFolder> folders = repository.findAll();
+
+        Config sshKeyPath = configRepository.findConfigByKey("sshKeyPath")
+                .orElseThrow();
 
         logger.info("Start backup processing");
         logger.info(String.format("Folders list: \n %s",
@@ -64,7 +65,7 @@ public class GitService {
 
                             try {
                                 Git git = git(folder.getPath());
-                                SshSessionFactory sshSessionFactory = createSshSessionFactory(appConfigData.ssh().file(), appConfigData.ssh().passphrase());
+                                SshSessionFactory sshSessionFactory = createSshSessionFactory(sshKeyPath.getValue(), "");
 
                                 TransportConfigCallback transportConfigCallback = transport -> {
                                     if (transport instanceof SshTransport t) {
@@ -113,14 +114,14 @@ public class GitService {
             protected JSch createDefaultJSch(FS fs) throws JSchException {
                 JSch jsch = super.createDefaultJSch(fs);
                 // Load SSH key
-                jsch.addIdentity("/vol/" + file, passphrase);
+                jsch.addIdentity(file, passphrase);
                 return jsch;
             }
         };
     }
 
     private boolean checkFolder(String path) {
-        File file = new File("/vol/" + path);
+        File file = new File(path);
 
         return file.isDirectory() &&
                 Arrays.stream(Objects.requireNonNull(file.list())).anyMatch(f -> f.contains(".git"));
@@ -128,7 +129,7 @@ public class GitService {
 
     private Git git(String path) throws IOException {
         Repository existingRepo = new FileRepositoryBuilder()
-                .setGitDir(new File("/vol/" + path + "/.git"))
+                .setGitDir(new File(path + "/.git"))
                 .build();
         return new Git(existingRepo);
     }

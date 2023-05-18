@@ -9,7 +9,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
 @Configuration
-@EnableConfigurationProperties({AppConfigData.class, GitData.class})
+@EnableConfigurationProperties({AppConfigData.class})
 @EnableScheduling
 @EnableWebMvc
 @RequiredArgsConstructor
