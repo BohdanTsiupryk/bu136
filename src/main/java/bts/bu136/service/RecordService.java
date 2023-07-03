@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -20,7 +19,7 @@ public class RecordService {
     private final LogRecordRepository repository;
 
     public List<LogRecordDto> getAllRecords() {
-        return repository.findAll()
+        return repository.getAllLimited()
                 .stream()
                 .map(log -> new LogRecordDto(
                         log.getId(),
@@ -29,7 +28,6 @@ public class RecordService {
                         log.getType().name(),
                         log.getDateTime().format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss"))
                 ))
-                .sorted(Comparator.comparingLong(LogRecordDto::id).reversed())
                 .collect(Collectors.toList());
     }
 
