@@ -13,11 +13,11 @@ public class GitController {
 
     private final GitService gitService;
 
-    @GetMapping("/backup")
+    @GetMapping("/api/backup")
     public ResponseEntity<HttpStatus> backup() {
 
         gitService.backup();
 
-        return ResponseEntity.ok(HttpStatus.OK);
+        return ResponseEntity.ok(HttpStatus.CREATED);
     }
 }

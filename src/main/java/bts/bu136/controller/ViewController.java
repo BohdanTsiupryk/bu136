@@ -6,6 +6,7 @@ import bts.bu136.model.Config;
 import bts.bu136.model.dto.LogRecordDto;
 import bts.bu136.repository.ConfigRepository;
 import bts.bu136.service.FolderService;
+import bts.bu136.service.GitService;
 import bts.bu136.service.RecordService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
@@ -28,6 +29,15 @@ public class ViewController {
     private final FolderService folderService;
     private final RecordService recordService;
     private final ConfigRepository configRepository;
+    private final GitService gitService;
+
+    @GetMapping("/backup")
+    public String backup() {
+
+        gitService.backup();
+
+        return "redirect:/logs";
+    }
 
     @GetMapping("/index")
     public String index(Model model) {
